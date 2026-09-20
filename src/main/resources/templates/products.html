@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management - AJAX REST API</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .product-img {
+            width: 54px;
+            height: 54px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            background-color: #fff;
+        }
+        .table-card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            border-radius: 12px;
+        }
+        .preview-box {
+            max-width: 130px;
+            max-height: 130px;
+            border-radius: 8px;
+            border: 1px dashed #ced4da;
+            padding: 4px;
+            display: none;
+        }
+        .price-text {
+            font-weight: 600;
+            color: #d63384;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fa-solid fa-layer-group text-primary me-2"></i>BT07 REST & AJAX
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/categories">
+                            <i class="fa-solid fa-folder me-1"></i>Categories
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active fw-semibold" href="/products">
+                            <i class="fa-solid fa-box-open me-1"></i>Products
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <a href="/swagger-ui/index.html" target="_blank" class="btn btn-outline-info btn-sm">
+                        <i class="fa-solid fa-code me-1"></i>Swagger 3 UI
+                    </a>
+                    <a href="/v3/api-docs" target="_blank" class="btn btn-outline-light btn-sm">
+                        <i class="fa-solid fa-file-code me-1"></i>OpenAPI JSON
+                    </a>
+                    <a href="/h2-console" target="_blank" class="btn btn-outline-warning btn-sm">
+                        <i class="fa-solid fa-database me-1"></i>H2 Console
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container py-4">
+        <!-- Toast Notification Area -->
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 1090">
+            <div id="liveToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body" id="toastMessage"></div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-dark mb-1">
+                    <i class="fa-solid fa-boxes-stacked text-success me-2"></i>Quản lý Sản phẩm (Product)
+                </h2>
+                <p class="text-muted mb-0">Thực hiện thêm, xem, sửa, xóa sản phẩm hoàn toàn bằng REST API & AJAX</p>
+            </div>
+            <button class="btn btn-success px-3 py-2 shadow-sm" onclick="showAddProductModal()">
+                <i class="fa-solid fa-plus-circle me-1"></i> Thêm Sản Phẩm Mới
+            </button>
+        </div>
+
+        <!-- Card Container -->
+        <div class="card table-card bg-white p-3">
+            <!-- Filter & Search Bar -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" id="productSearch" class="form-control border-start-0" placeholder="Tìm theo tên sản phẩm...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">-- Tất cả danh mục --</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="loadProducts()">
+                        <i class="fa-solid fa-rotate me-1"></i> Làm mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loadingState" class="text-center py-5">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+                <p class="text-muted mt-2">Đang tải danh sách sản phẩm từ API...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-5 d-none">
+                <i class="fa-solid fa-box-open fa-3x text-secondary mb-3"></i>
+                <h5 class="text-muted">Chưa có sản phẩm nào</h5>
+                <p class="text-secondary small">Hãy thêm sản phẩm đầu tiên bằng nút Thêm Sản Phẩm Mới.</p>
+            </div>
+
+            <!-- Products Table -->
+            <div class="table-responsive d-none" id="tableContainer">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 70px;">ID</th>
+                            <th style="width: 80px;">Ảnh</th>
+                            <th>Tên Sản Phẩm</th>
+                            <th>Danh Mục</th>
+                            <th style="width: 140px;">Đơn Giá</th>
+                            <th style="width: 90px;" class="text-center">Giảm (%)</th>
+                            <th style="width: 90px;" class="text-center">Tồn Kho</th>
+                            <th style="width: 110px;" class="text-center">Trạng Thái</th>
+                            <th style="width: 160px;" class="text-end">Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                        <!-- Populated via AJAX -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Add Product -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="addProductForm" enctype="multipart/form-data">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fa-solid fa-plus-circle me-1"></i> Thêm Sản Phẩm Mới</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="addErrorAlert" class="alert alert-danger d-none" role="alert"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="addProductName" class="form-label fw-semibold">
+                                    Tên Sản Phẩm <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="addProductName" name="productName" required placeholder="Nhập tên sản phẩm...">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="addCategoryId" class="form-label fw-semibold">
+                                    Danh Mục <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="addCategoryId" name="categoryId" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="addUnitPrice" class="form-label fw-semibold">
+                                    Đơn Giá (VNĐ) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="addUnitPrice" name="unitPrice" step="1000" min="0" required placeholder="Ví dụ: 15000000">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="addDiscount" class="form-label fw-semibold">Giảm Giá (%)</label>
+                                <input type="number" class="form-control" id="addDiscount" name="discount" step="0.5" min="0" max="100" value="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="addQuantity" class="form-label fw-semibold">
+                                    Số Lượng Tồn <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="addQuantity" name="quantity" min="0" value="10" required>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label for="addImageFile" class="form-label fw-semibold">Ảnh Sản Phẩm</label>
+                                <input type="file" class="form-control" id="addImageFile" name="imageFile" accept="image/*">
+                                <div class="form-text">Hỗ trợ JPG, PNG, WEBP, GIF (Tối đa 10MB)</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="addStatus" class="form-label fw-semibold">Trạng Thái</label>
+                                <select class="form-select" id="addStatus" name="status">
+                                    <option value="1">Đang kinh doanh (Active)</option>
+                                    <option value="0">Ngừng kinh doanh (Inactive)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 text-center" id="addPreviewContainer" style="display: none;">
+                                <img id="addImagePreview" src="#" alt="Preview" class="preview-box">
+                            </div>
+
+                            <div class="col-12">
+                                <label for="addDescription" class="form-label fw-semibold">Mô Tả Sản Phẩm</label>
+                                <textarea class="form-control" id="addDescription" name="description" rows="3" placeholder="Nhập cấu hình, thông số, bảo hành..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="submit" id="btnAddProductSubmit" class="btn btn-success">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Lưu Sản Phẩm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Product -->
+    <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="editProductForm" enctype="multipart/form-data">
+                    <input type="hidden" id="editProductId" name="productId">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-1"></i> Cập Nhật Sản Phẩm</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="editErrorAlert" class="alert alert-danger d-none" role="alert"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold text-muted">Mã SP (ID)</label>
+                                <input type="text" class="form-control bg-light" id="displayEditProductId" readonly>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="editProductName" class="form-label fw-semibold">
+                                    Tên Sản Phẩm <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="editProductName" name="productName" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editCategoryId" class="form-label fw-semibold">
+                                    Danh Mục <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="editCategoryId" name="categoryId" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="editUnitPrice" class="form-label fw-semibold">
+                                    Đơn Giá (VNĐ) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="editUnitPrice" name="unitPrice" step="1000" min="0" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editDiscount" class="form-label fw-semibold">Giảm Giá (%)</label>
+                                <input type="number" class="form-control" id="editDiscount" name="discount" step="0.5" min="0" max="100">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editQuantity" class="form-label fw-semibold">
+                                    Số Lượng Tồn <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="editQuantity" name="quantity" min="0" required>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label for="editImageFile" class="form-label fw-semibold">Đổi Ảnh Mới (Tùy chọn)</label>
+                                <input type="file" class="form-control" id="editImageFile" name="imageFile" accept="image/*">
+                                <div class="form-text">Nếu không chọn ảnh mới, ảnh hiện tại sẽ được giữ nguyên.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editStatus" class="form-label fw-semibold">Trạng Thái</label>
+                                <select class="form-select" id="editStatus" name="status">
+                                    <option value="1">Đang kinh doanh (Active)</option>
+                                    <option value="0">Ngừng kinh doanh (Inactive)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 d-flex align-items-center gap-3">
+                                <div>
+                                    <small class="d-block text-muted mb-1">Ảnh hiện tại:</small>
+                                    <img id="currentProductImgPreview" src="" alt="Current Image" class="product-img">
+                                </div>
+                                <div id="editNewImgPreviewContainer" style="display: none;">
+                                    <small class="d-block text-muted mb-1">Ảnh mới chọn:</small>
+                                    <img id="editNewImgPreview" src="#" alt="New Image" class="product-img border-primary border-2">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="editDescription" class="form-label fw-semibold">Mô Tả Sản Phẩm</label>
+                                <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="submit" id="btnEditProductSubmit" class="btn btn-warning">
+                            <i class="fa-solid fa-check me-1"></i> Cập Nhật
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Delete Confirmation -->
+    <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-triangle-exclamation me-1"></i> Xác nhận xóa</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fa-solid fa-trash-can fa-3x text-danger mb-3"></i>
+                    <p class="mb-1">Bạn có chắc muốn xóa sản phẩm này?</p>
+                    <p class="fw-bold text-dark fs-6" id="deleteProductNameDisplay"></p>
+                    <small class="text-danger d-block">Dữ liệu sẽ bị xóa vĩnh viễn khỏi hệ thống.</small>
+                </div>
+                <div class="modal-footer bg-light justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger">
+                        <i class="fa-solid fa-trash me-1"></i> Đồng ý xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery 3.7.1 & Bootstrap 5 JS Bundle -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        var API_PRODUCT_URL = '/api/products';
+        var API_CATEGORY_URL = '/api/categories';
+        var productsData = [];
+        var categoriesMap = {};
+        var deleteTargetId = null;
+
+        // Modals & Toast
+        var addModal = new bootstrap.Modal(document.getElementById('addProductModal'));
+        var editModal = new bootstrap.Modal(document.getElementById('editProductModal'));
+        var deleteModal = new bootstrap.Modal(document.getElementById('deleteProductModal'));
+        var toastEl = document.getElementById('liveToast');
+        var liveToast = new bootstrap.Toast(toastEl, { delay: 4000 });
+
+        function showNotification(message, isSuccess) {
+            $('#toastMessage').text(message);
+            $('#liveToast').removeClass('bg-success bg-danger')
+                           .addClass(isSuccess ? 'bg-success' : 'bg-danger');
+            liveToast.show();
+        }
+
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            return $('<div>').text(text).html();
+        }
+
+        function formatCurrency(amount) {
+            if (isNaN(amount)) return '0 ₫';
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        // Load Categories for Select Dropdowns
+        function loadCategoryOptions(callback) {
+            $.ajax({
+                url: API_CATEGORY_URL,
+                type: 'GET',
+                dataType: 'json',
+                success: function(res) {
+                    if (res && res.status && res.body) {
+                        var addSelect = $('#addCategoryId');
+                        var editSelect = $('#editCategoryId');
+                        var filterSelect = $('#categoryFilter');
+
+                        addSelect.find('option:not(:first)').remove();
+                        editSelect.find('option:not(:first)').remove();
+                        filterSelect.find('option:not(:first)').remove();
+                        categoriesMap = {};
+
+                        $.each(res.body, function(i, cat) {
+                            categoriesMap[cat.categoryId] = cat.categoryName;
+                            var opt = $('<option>').val(cat.categoryId).text(cat.categoryName);
+                            addSelect.append(opt.clone());
+                            editSelect.append(opt.clone());
+                            filterSelect.append(opt.clone());
+                        });
+
+                        if (callback) callback();
+                    }
+                }
+            });
+        }
+
+        // Load Products via AJAX GET
+        function loadProducts() {
+            $('#loadingState').removeClass('d-none');
+            $('#tableContainer').addClass('d-none');
+            $('#emptyState').addClass('d-none');
+
+            $.ajax({
+                url: API_PRODUCT_URL,
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    $('#loadingState').addClass('d-none');
+                    if (response && response.status && response.body) {
+                        productsData = response.body;
+                        filterAndRenderProducts();
+                    } else {
+                        showNotification('Không thể tải danh sách sản phẩm', false);
+                    }
+                },
+                error: function(xhr) {
+                    $('#loadingState').addClass('d-none');
+                    showNotification('Lỗi kết nối máy chủ khi tải sản phẩm', false);
+                }
+            });
+        }
+
+        // Filter and Render
+        function filterAndRenderProducts() {
+            var keyword = $('#productSearch').val().toLowerCase().trim();
+            var selectedCategory = $('#categoryFilter').val();
+
+            var filtered = productsData.filter(function(item) {
+                var matchName = !keyword || (item.productName && item.productName.toLowerCase().includes(keyword));
+                var matchCategory = !selectedCategory || (item.categoryId == selectedCategory);
+                return matchName && matchCategory;
+            });
+
+            renderProductTable(filtered);
+        }
+
+        // Render Table Body
+        function renderProductTable(list) {
+            var tbody = $('#productTableBody');
+            tbody.empty();
+
+            if (!list || list.length === 0) {
+                $('#emptyState').removeClass('d-none');
+                $('#tableContainer').addClass('d-none');
+                return;
+            }
+
+            $('#emptyState').addClass('d-none');
+            $('#tableContainer').removeClass('d-none');
+
+            $.each(list, function(index, item) {
+                var imgSrc = item.images ? ('/api/products/images/' + encodeURIComponent(item.images)) : 'https://via.placeholder.com/54?text=No+Img';
+                var statusBadge = item.status === 1
+                    ? '<span class="badge bg-success-subtle text-success border border-success px-2 py-1">Active</span>'
+                    : '<span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">Inactive</span>';
+
+                var row = $('<tr>');
+                row.append($('<td>').addClass('fw-bold text-secondary').text('#' + item.productId));
+                row.append($('<td>').html('<img src="' + imgSrc + '" class="product-img" onerror="this.src=\'https://via.placeholder.com/54?text=Err\'" alt="img">'));
+                row.append($('<td>').html('<div class="fw-semibold text-dark">' + escapeHtml(item.productName) + '</div><small class="text-muted text-truncate d-inline-block" style="max-width: 250px;">' + escapeHtml(item.description || '') + '</small>'));
+                row.append($('<td>').html('<span class="badge bg-light text-dark border">' + escapeHtml(item.categoryName || 'N/A') + '</span>'));
+                row.append($('<td>').html('<span class="price-text">' + formatCurrency(item.unitPrice) + '</span>'));
+                row.append($('<td>').addClass('text-center').html(item.discount > 0 ? ('<span class="badge bg-warning text-dark">-' + item.discount + '%</span>') : '<span class="text-muted">0%</span>'));
+                row.append($('<td>').addClass('text-center').html(item.quantity > 0 ? ('<span class="fw-semibold text-primary">' + item.quantity + '</span>') : '<span class="text-danger fw-bold">Hết</span>'));
+                row.append($('<td>').addClass('text-center').html(statusBadge));
+
+                var actionTd = $('<td>').addClass('text-end');
+                var editBtn = $('<button>')
+                    .addClass('btn btn-outline-warning btn-sm me-2')
+                    .html('<i class="fa-solid fa-pen-to-square"></i> Sửa')
+                    .on('click', function() { showEditProductModal(item.productId); });
+
+                var deleteBtn = $('<button>')
+                    .addClass('btn btn-outline-danger btn-sm')
+                    .html('<i class="fa-solid fa-trash"></i> Xóa')
+                    .on('click', function() { openDeleteModal(item.productId, item.productName); });
+
+                actionTd.append(editBtn).append(deleteBtn);
+                row.append(actionTd);
+                tbody.append(row);
+            });
+        }
+
+        // Search & Filter Listeners
+        $('#productSearch').on('input', filterAndRenderProducts);
+        $('#categoryFilter').on('change', filterAndRenderProducts);
+
+        // Open Add Modal
+        function showAddProductModal() {
+            $('#addProductForm')[0].reset();
+            $('#addErrorAlert').addClass('d-none').empty();
+            $('#addImagePreview').hide().attr('src', '#');
+            $('#addPreviewContainer').hide();
+            loadCategoryOptions();
+            addModal.show();
+        }
+
+        // Preview Add Image
+        $('#addImageFile').on('change', function() {
+            var file = this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#addImagePreview').attr('src', e.target.result).show();
+                    $('#addPreviewContainer').show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                $('#addImagePreview').hide().attr('src', '#');
+                $('#addPreviewContainer').hide();
+            }
+        });
+
+        // Submit Add Form via AJAX POST
+        $('#addProductForm').on('submit', function(e) {
+            e.preventDefault();
+            $('#addErrorAlert').addClass('d-none').empty();
+
+            var formData = new FormData(this);
+            $('#btnAddProductSubmit').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Đang lưu...');
+
+            $.ajax({
+                url: API_PRODUCT_URL,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    $('#btnAddProductSubmit').prop('disabled', false).html('<i class="fa-solid fa-floppy-disk me-1"></i> Lưu Sản Phẩm');
+                    addModal.hide();
+                    showNotification('Thêm sản phẩm thành công!', true);
+                    loadProducts();
+                },
+                error: function(xhr) {
+                    $('#btnAddProductSubmit').prop('disabled', false).html('<i class="fa-solid fa-floppy-disk me-1"></i> Lưu Sản Phẩm');
+                    var errorMsg = 'Lỗi thêm sản phẩm';
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.body && typeof res.body === 'object') {
+                            var list = Object.values(res.body).join('<br>');
+                            errorMsg = list;
+                        } else if (res.message) {
+                            errorMsg = res.message;
+                        }
+                    } catch(e) {}
+                    $('#addErrorAlert').html(errorMsg).removeClass('d-none');
+                }
+            });
+        });
+
+        // Open Edit Modal & Fetch Product by ID
+        function showEditProductModal(id) {
+            $('#editProductForm')[0].reset();
+            $('#editErrorAlert').addClass('d-none').empty();
+            $('#editNewImgPreviewContainer').hide();
+
+            loadCategoryOptions(function() {
+                $.ajax({
+                    url: API_PRODUCT_URL + '/' + id,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res && res.status && res.body) {
+                            var item = res.body;
+                            $('#editProductId').val(item.productId);
+                            $('#displayEditProductId').val('#' + item.productId);
+                            $('#editProductName').val(item.productName);
+                            $('#editCategoryId').val(item.categoryId);
+                            $('#editUnitPrice').val(item.unitPrice);
+                            $('#editDiscount').val(item.discount);
+                            $('#editQuantity').val(item.quantity);
+                            $('#editStatus').val(item.status);
+                            $('#editDescription').val(item.description);
+
+                            var imgSrc = item.images ? ('/api/products/images/' + encodeURIComponent(item.images)) : 'https://via.placeholder.com/54?text=No+Img';
+                            $('#currentProductImgPreview').attr('src', imgSrc);
+                            editModal.show();
+                        } else {
+                            showNotification('Không tìm thấy sản phẩm ID ' + id, false);
+                        }
+                    },
+                    error: function(xhr) {
+                        showNotification('Lỗi khi lấy chi tiết sản phẩm', false);
+                    }
+                });
+            });
+        }
+
+        // Preview Edit Image
+        $('#editImageFile').on('change', function() {
+            var file = this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#editNewImgPreview').attr('src', e.target.result);
+                    $('#editNewImgPreviewContainer').show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                $('#editNewImgPreviewContainer').hide();
+            }
+        });
+
+        // Submit Edit Form via AJAX PUT
+        $('#editProductForm').on('submit', function(e) {
+            e.preventDefault();
+            $('#editErrorAlert').addClass('d-none').empty();
+
+            var id = $('#editProductId').val();
+            var formData = new FormData(this);
+            $('#btnEditProductSubmit').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Đang cập nhật...');
+
+            $.ajax({
+                url: API_PRODUCT_URL + '/' + id,
+                type: 'PUT',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    $('#btnEditProductSubmit').prop('disabled', false).html('<i class="fa-solid fa-check me-1"></i> Cập Nhật');
+                    editModal.hide();
+                    showNotification('Cập nhật sản phẩm thành công!', true);
+                    loadProducts();
+                },
+                error: function(xhr) {
+                    $('#btnEditProductSubmit').prop('disabled', false).html('<i class="fa-solid fa-check me-1"></i> Cập Nhật');
+                    var errorMsg = 'Lỗi cập nhật sản phẩm';
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.body && typeof res.body === 'object') {
+                            var list = Object.values(res.body).join('<br>');
+                            errorMsg = list;
+                        } else if (res.message) {
+                            errorMsg = res.message;
+                        }
+                    } catch(e) {}
+                    $('#editErrorAlert').html(errorMsg).removeClass('d-none');
+                }
+            });
+        });
+
+        // Open Delete Modal
+        function openDeleteModal(id, name) {
+            deleteTargetId = id;
+            $('#deleteProductNameDisplay').text(name + ' (ID #' + id + ')');
+            deleteModal.show();
+        }
+
+        // Confirm Delete via AJAX DELETE
+        $('#confirmDeleteBtn').on('click', function() {
+            if (!deleteTargetId) return;
+
+            $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Đang xóa...');
+
+            $.ajax({
+                url: API_PRODUCT_URL + '/' + deleteTargetId,
+                type: 'DELETE',
+                dataType: 'json',
+                success: function(res) {
+                    $('#confirmDeleteBtn').prop('disabled', false).html('<i class="fa-solid fa-trash me-1"></i> Đồng ý xóa');
+                    deleteModal.hide();
+                    showNotification('Xóa sản phẩm thành công!', true);
+                    loadProducts();
+                },
+                error: function(xhr) {
+                    $('#confirmDeleteBtn').prop('disabled', false).html('<i class="fa-solid fa-trash me-1"></i> Đồng ý xóa');
+                    deleteModal.hide();
+                    var errorMsg = 'Lỗi khi xóa sản phẩm';
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.message) errorMsg = res.message;
+                    } catch(e) {}
+                    showNotification(errorMsg, false);
+                }
+            });
+        });
+
+        // Initial Load
+        $(document).ready(function() {
+            loadCategoryOptions();
+            loadProducts();
+        });
+    </script>
+</body>
+</html>
