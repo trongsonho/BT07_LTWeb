@@ -22,7 +22,7 @@ public class OpenApiDocsTest {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.openapi", notNullValue()))
-                .andExpect(jsonPath("$.info.title", containsString("BT07")))
+                .andExpect(jsonPath("$.info.title", is("Product Management API")))
                 .andExpect(jsonPath("$.paths['/api/categories']", notNullValue()))
                 .andExpect(jsonPath("$.paths['/api/products']", notNullValue()));
     }

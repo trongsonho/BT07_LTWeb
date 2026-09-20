@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BT07 - Web Programming REST API & AJAX</title>
+    <title>Hệ thống quản lý sản phẩm</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome 6 -->
@@ -16,9 +16,9 @@
         .hero-section {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 60px 0 40px 0;
+            padding: 70px 0 50px 0;
             border-radius: 0 0 24px 24px;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
         }
         .feature-card {
             border: none;
@@ -30,10 +30,6 @@
             transform: translateY(-5px);
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
-        .badge-endpoint {
-            font-family: monospace;
-            font-size: 0.85rem;
-        }
     </style>
 </head>
 <body>
@@ -41,7 +37,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/">
-                <i class="fa-solid fa-layer-group text-primary me-2"></i>BT07 REST & AJAX
+                <i class="fa-solid fa-boxes-stacked text-primary me-2"></i>Quản lý sản phẩm
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                 <span class="navbar-toggler-icon"></span>
@@ -49,27 +45,18 @@
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="/categories">
-                            <i class="fa-solid fa-folder me-1"></i>Categories
-                        </a>
+                        <a class="nav-link active fw-semibold" href="/">Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/products">
-                            <i class="fa-solid fa-box-open me-1"></i>Products
-                        </a>
+                        <a class="nav-link" href="/categories">Danh mục</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/products">Sản phẩm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/swagger-ui/index.html" target="_blank">Tài liệu API</a>
                     </li>
                 </ul>
-                <div class="d-flex gap-2">
-                    <a href="/swagger-ui/index.html" target="_blank" class="btn btn-outline-info btn-sm">
-                        <i class="fa-solid fa-code me-1"></i>Swagger 3 UI
-                    </a>
-                    <a href="/v3/api-docs" target="_blank" class="btn btn-outline-light btn-sm">
-                        <i class="fa-solid fa-file-code me-1"></i>OpenAPI JSON
-                    </a>
-                    <a href="/h2-console" target="_blank" class="btn btn-outline-warning btn-sm">
-                        <i class="fa-solid fa-database me-1"></i>H2 Console
-                    </a>
-                </div>
             </div>
         </div>
     </nav>
@@ -77,125 +64,96 @@
     <!-- Hero Header -->
     <section class="hero-section text-center">
         <div class="container">
-            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3">ASSIGNMENT BT07</span>
-            <h1 class="display-5 fw-bold mb-2">Spring Boot 3 RESTful API & AJAX CRUD</h1>
-            <p class="lead mb-4 opacity-75">
-                Xây dựng REST API Category, Product, Tài liệu hóa Swagger 3 (OpenAPI) và Giao diện AJAX Client hoàn chỉnh
-            </p>
-            <div class="d-flex justify-content-center gap-3">
+            <h1 class="display-5 fw-bold mb-3">Hệ thống quản lý sản phẩm</h1>
+            <p class="lead mb-4 opacity-90">Quản lý danh mục và sản phẩm</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
                 <a href="/categories" class="btn btn-light btn-lg px-4 fw-semibold text-primary shadow">
-                    <i class="fa-solid fa-folder me-2"></i>Category AJAX UI
+                    <i class="fa-solid fa-folder me-2"></i>Quản lý danh mục
                 </a>
                 <a href="/products" class="btn btn-outline-light btn-lg px-4 fw-semibold shadow">
-                    <i class="fa-solid fa-boxes-stacked me-2"></i>Product AJAX UI
+                    <i class="fa-solid fa-boxes-stacked me-2"></i>Quản lý sản phẩm
                 </a>
                 <a href="/swagger-ui/index.html" target="_blank" class="btn btn-info btn-lg px-4 text-white fw-semibold shadow">
-                    <i class="fa-solid fa-book-open me-2"></i>Swagger UI
+                    <i class="fa-solid fa-book-open me-2"></i>Tài liệu API
                 </a>
             </div>
         </div>
     </section>
 
-    <!-- Main Features Grid -->
+    <!-- Navigation Cards -->
     <div class="container mb-5">
         <div class="row g-4">
-            <!-- Item 3: Category REST API -->
+            <!-- Card 1: Category Management -->
             <div class="col-md-4">
-                <div class="card feature-card h-100 p-4">
+                <div class="card feature-card h-100 p-4 bg-white d-flex flex-column">
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle me-3">
                             <i class="fa-solid fa-folder-tree fa-2x"></i>
                         </div>
                         <div>
-                            <h5 class="fw-bold mb-0">Mục 3: Category API</h5>
-                            <small class="text-success fw-semibold"><i class="fa-solid fa-check-circle"></i> Đã hoàn thành</small>
+                            <h5 class="fw-bold mb-0">Quản lý danh mục</h5>
                         </div>
                     </div>
-                    <p class="text-muted small">
-                        Triển khai đầy đủ RESTful API Category, tải và lưu trữ ảnh Icon an toàn, xử lý trùng tên danh mục và xóa logic an toàn.
+                    <p class="text-muted flex-grow-1">
+                        Thêm, cập nhật, tìm kiếm và xóa danh mục sản phẩm.
                     </p>
-                    <ul class="list-unstyled small mb-3">
-                        <li><span class="badge bg-success badge-endpoint me-1">GET</span> <code>/api/categories</code></li>
-                        <li><span class="badge bg-primary badge-endpoint me-1">POST</span> <code>/api/categories</code></li>
-                        <li><span class="badge bg-warning text-dark badge-endpoint me-1">PUT</span> <code>/api/categories/{id}</code></li>
-                        <li><span class="badge bg-danger badge-endpoint me-1">DELETE</span> <code>/api/categories/{id}</code></li>
-                    </ul>
-                    <a href="/categories" class="btn btn-outline-primary btn-sm mt-auto">Truy cập Trang Quản lý &rarr;</a>
+                    <div class="mt-3">
+                        <a href="/categories" class="btn btn-outline-primary w-100">
+                            Mở trang danh mục &rarr;
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- Item 4: Swagger 3 / OpenAPI -->
+            <!-- Card 2: Product Management -->
             <div class="col-md-4">
-                <div class="card feature-card h-100 p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle me-3">
-                            <i class="fa-solid fa-code fa-2x"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold mb-0">Mục 4: Swagger 3 UI</h5>
-                            <small class="text-success fw-semibold"><i class="fa-solid fa-check-circle"></i> Đã hoàn thành</small>
-                        </div>
-                    </div>
-                    <p class="text-muted small">
-                        Cấu hình Springdoc OpenAPI v2 cho Spring Boot 3 (loại bỏ Swagger 2 / Springfox cũ). Tài liệu hóa tường minh mọi tham số, mô hình và mã phản hồi.
-                    </p>
-                    <ul class="list-unstyled small mb-3">
-                        <li><i class="fa-solid fa-link text-info me-1"></i> <a href="/swagger-ui/index.html" target="_blank">/swagger-ui/index.html</a></li>
-                        <li><i class="fa-solid fa-file-code text-secondary me-1"></i> <a href="/v3/api-docs" target="_blank">/v3/api-docs</a></li>
-                        <li><i class="fa-solid fa-shield-halved text-warning me-1"></i> Không dùng @EnableSwagger2</li>
-                    </ul>
-                    <a href="/swagger-ui/index.html" target="_blank" class="btn btn-outline-info btn-sm mt-auto">Mở Swagger Documentation &rarr;</a>
-                </div>
-            </div>
-
-            <!-- Item 5: Product API & AJAX UI -->
-            <div class="col-md-4">
-                <div class="card feature-card h-100 p-4">
+                <div class="card feature-card h-100 p-4 bg-white d-flex flex-column">
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle me-3">
                             <i class="fa-solid fa-boxes-stacked fa-2x"></i>
                         </div>
                         <div>
-                            <h5 class="fw-bold mb-0">Mục 5: Product & AJAX</h5>
-                            <small class="text-success fw-semibold"><i class="fa-solid fa-check-circle"></i> Đã hoàn thành</small>
+                            <h5 class="fw-bold mb-0">Quản lý sản phẩm</h5>
                         </div>
                     </div>
-                    <p class="text-muted small">
-                        Quản lý sản phẩm qua AJAX không reload trang: tải động danh mục, upload ảnh sản phẩm, tính giá giảm, validate biểu mẫu và thông báo tức thời.
+                    <p class="text-muted flex-grow-1">
+                        Quản lý thông tin, hình ảnh, giá và danh mục của sản phẩm.
                     </p>
-                    <ul class="list-unstyled small mb-3">
-                        <li><span class="badge bg-success badge-endpoint me-1">GET</span> <code>/api/products</code></li>
-                        <li><span class="badge bg-primary badge-endpoint me-1">POST</span> <code>/api/products</code></li>
-                        <li><span class="badge bg-warning text-dark badge-endpoint me-1">PUT</span> <code>/api/products/{id}</code></li>
-                        <li><span class="badge bg-danger badge-endpoint me-1">DELETE</span> <code>/api/products/{id}</code></li>
-                    </ul>
-                    <a href="/products" class="btn btn-outline-success btn-sm mt-auto">Truy cập Trang Quản lý &rarr;</a>
+                    <div class="mt-3">
+                        <a href="/products" class="btn btn-outline-success w-100">
+                            Mở trang sản phẩm &rarr;
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- System Information Card -->
-        <div class="card border-0 shadow-sm rounded-4 mt-4 p-4 bg-white">
-            <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-server text-primary me-2"></i>Thông tin Hệ thống & Cấu hình</h5>
-            <div class="row g-3 small">
-                <div class="col-md-3">
-                    <strong>Framework:</strong> Spring Boot 3.3.5
-                </div>
-                <div class="col-md-3">
-                    <strong>Java Target:</strong> Java 17 LTS (Jakarta EE 10)
-                </div>
-                <div class="col-md-3">
-                    <strong>Cơ sở dữ liệu:</strong> H2 In-Memory (Sẵn sàng chấm bài)
-                </div>
-                <div class="col-md-3">
-                    <strong>Thư mục Upload:</strong> <code>uploads/</code> (Tự động tạo)
+            <!-- Card 3: API Documentation -->
+            <div class="col-md-4">
+                <div class="card feature-card h-100 p-4 bg-white d-flex flex-column">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle me-3">
+                            <i class="fa-solid fa-code fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Tài liệu API</h5>
+                        </div>
+                    </div>
+                    <p class="text-muted flex-grow-1">
+                        Xem và thử nghiệm các API của hệ thống.
+                    </p>
+                    <div class="mt-3">
+                        <a href="/swagger-ui/index.html" target="_blank" class="btn btn-outline-info w-100">
+                            Mở tài liệu API &rarr;
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
     <footer class="text-center py-4 text-muted small border-top bg-white">
-        BT07_LTWeb &copy; 2026 - Lập trình Web - RESTful API & AJAX Client
+        BT07_LTWeb &copy; 2026 — Lập trình Web
     </footer>
 
     <!-- Bootstrap 5 JS -->
